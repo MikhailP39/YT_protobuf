@@ -1,0 +1,27 @@
+syntax = 'proto3';
+
+package messages;
+
+message Request {
+    message Step {
+        int32 id = 1;
+        optional int32 parent_id = 2;
+        int32 duration = 3;
+        string name = 4;
+    }
+
+    repeated Step steps = 1;
+    optional int32 step_id = 2;
+}
+
+message Response {
+    message HierarchicalStep {
+        string name = 1;
+        int32 duration = 2;
+        repeated HierarchicalStep children = 3;
+    }
+
+    repeated HierarchicalStep hierarchical_step = 1;
+    string max_duration_step_name = 2;
+    int32 max_duration_step_duration = 3;
+}
