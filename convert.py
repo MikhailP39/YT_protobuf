@@ -5,79 +5,77 @@ from google.protobuf.json_format import MessageToDict
 from operator import itemgetter
 
 
-def get_request(message_request):
+def decode_message(message1=None, message2=None):
     """Get Request message."""
     request = Request.Request()
 
     """Get Response message."""
     response = Response.Response()
 
-    """Decode Request message."""
-    request.ParseFromString(message_request)
+    """Decode messages."""
+    request.ParseFromString(message1)
+    response.ParseFromString(message2)
 
-    """Transform Request message to Dict."""
+    # print(request)
+    print(response)
+    print("-----------------------")
+
+def get_request(message):
+    """Get Request message."""
+    request = Request.Request()
+    """Decode messages."""
+    request.ParseFromString(message)
+    """Transform Request message to Dict"""
     dict_request = MessageToDict(request)
-
-    """Create the Lists with steps"""
+    """Create Lists with Steps."""
     list_steps = dict_request['steps']
-
-    """Create the Parents, Children and Duration lists."""
+    """Create Parents, Children and Durations lists."""
     list_parents = []
     list_children = []
-    list_duration = []
-
-    """Fill the Parents, Children and Duration lists"""
+    list_durations = []
+    """Fill the Parents, Children and Durations lists."""
     for i in range(len(list_steps)):
         dict_item = list_steps[i]
-        list_duration.append(dict_item['duration'])
+        list_durations.append(dict_item['duration'])
         if dict_item['id'] == dict_request['stepId'] or not dict_item['parentId']:
             list_parents.append(list_steps[i])
         else:
             list_children.append(list_steps[i])
-
-    """Find the Max Duration."""
-    max_duration = max(list_duration)
-
-    """Sort Children List by the Duration"""
+    """Find the Max duration."""
+    max_duration = max(list_durations)
+    """Sort Children List by the Durations"""
     list_children = sorted(list_children, key=itemgetter('duration'), reverse=True)
-
-    """Sum of the Children Duration with ParentId"""
-    sum_duration_children = []
+    """Sum of the Children Durations by ParentId"""
+    children_duration_by_parent = []
     for p in range(len(list_parents)):
         for c in range(len(list_children)):
             children_item = list_children[c]
-            parents_item = list_parents[p]
-            if children_item['parentId'] == parents_item['id']:
-                sum_duration_children.append(children_item['duration'])
-    sum_duration_children = sum(sum_duration_children)
+            parent_item = list_parents[p]
+            if children_item['parentId'] == parent_item['id']:
+                children_duration_by_parent.append(children_item['duration'])
+    sum_children_duration = sum(children_duration_by_parent)
 
-    # """Read the messages"""
-    # print(list_duration)
-    # print(list_parents)
-    # print(list_children)
-    # print(f"Max duration: {max_duration}")
-    # print(f"Sorted Child List by Duration: {list_children}")
-    # print(f"Sum duration of children: {sum_duration_children}")
-    # print("------------------")
-
-    """Set the Response Message"""
-    parent_response = response.hierarchical_step.add()
-    set_response(parent_response, list_parents, list_children, dict_request)
-
-    """Fill Max Duration Step Name"""
+    """Fill the Response message."""
+    response = Response.Response()
+    parents_response = response.hierarchical_step.add()
+    set_response(parents_response, list_parents, list_children, dict_request)
+    """Fill the MAX Duration Step Name."""
     for i in range(len(list_steps)):
         dict_item = list_steps[i]
         if dict_item['duration'] == max_duration:
             response.max_duration_step_name = dict_item['name']
-
-    """Fill Max Duration Step Duration"""
-    response.max_duration_step_duration = max_duration - sum_duration_children
-
+    """Fill the MAX Duration Step Duration."""
+    response.max_duration_step_duration = max_duration - sum_children_duration
     """Transform Response message to the Bite."""
     message_response = response.SerializeToString()
-
-    """Print the Byte response Message Result"""
-    print(f"Output Message: {message_response}")
+    """Print the Bite Response Message Result"""
+    return message_response
+    # print(list_parents)
+    # print(list_children)
+    # print(list_durations)
+    # print(sum_children_duration)
+    # print(max_duration)
+    # print(response)
 
 
 def set_response(parent_response, parents, children, dict_request):
@@ -99,9 +97,13 @@ def set_response(parent_response, parents, children, dict_request):
 
 
 def main():
-    input_mes = b'\n\x08\x08\x01\x18\x96\x01"\x01A\n\t\x08\x02\x10\x01\x18-"\x01B\n\t\x08\x03\x10\x01\x182"\x01C\n\t\x08\x04\x10\x02\x18\x14"\x01D\n\t\x08\x05\x10\x02\x18\x14"\x01E\x10\x01'
-    #output_mes = b'\n"\n\x01A\x10\x96\x01\x1a\x05\n\x01C\x102\x1a\x13\n\x01B\x10-\x1a\x05\n\x01D\x10\x14\x1a\x05\n\x01E\x10\x14\x12\x01A\x187'
-    get_request(input_mes)
+    request = b'\n\x08\x08\x01\x18\x96\x01"\x01A\n\t\x08\x02\x10\x01\x18-"\x01B\n\t\x08\x03\x10\x01\x182"\x01C\n\t\x08\x04\x10\x02\x18\x14"\x01D\n\t\x08\x05\x10\x02\x18\x14"\x01E\x10\x01'
+    # response = b'\n"\n\x01A\x10\x96\x01\x1a\x05\n\x01C\x102\x1a\x13\n\x01B\x10-\x1a\x05\n\x01D\x10\x14\x1a\x05\n\x01E\x10\x14\x12\x01A\x187'
+    # decode_message(request, response)
+    response = get_request(request)
+
+    print(f"Your request message: {request}")
+    print(f"After transform request to response: {response}")
 
 
 if __name__ == "__main__":
